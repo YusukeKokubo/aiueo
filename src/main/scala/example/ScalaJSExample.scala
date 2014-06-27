@@ -7,140 +7,102 @@ import tags2.section
 import rx._
 import scala.scalajs.js.annotation.JSExport
 import scala.Some
+import scala.util.Random
+import scala.scalajs.js
+import org.scalajs.dom.{HTMLElement, Event}
 
 
-case class Task(txt: Var[String], done: Var[Boolean])
+case class Word(txt: String, done: Var[Boolean]=Var(false))
+
 @JSExport
 object ScalaJSExample {
   import Framework._
 
-  val editing = Var[Option[Task]](None)
-
-  val tasks = Var(
-    Seq(
-      Task(Var("TodoMVC Task A"), Var(true)),
-      Task(Var("TodoMVC Task B"), Var(false)),
-      Task(Var("TodoMVC Task C"), Var(false))
-    )
-  )
-
-  val filter = Var("All")
-
-  val filters = Map[String, Task => Boolean](
-    ("All", t => true),
-    ("Active", !_.done()),
-    ("Completed", _.done())
-  )
-
-  val done = Rx{tasks().count(_.done())}
-
-  val notDone = Rx{tasks().length - done()}
-
   val inputBox = input(
     id:="new-todo",
-    placeholder:="What needs to be done?",
-    autofocus:=true
+    autofocus:=true,
+    autocomplete:=false
   ).render
 
+  val numbers = Seq(
+    Word("one"),
+    Word("two"),
+    Word("three"),
+    Word("four"),
+    Word("five"),
+    Word("six"),
+    Word("seven"),
+    Word("eight"),
+    Word("nine"),
+    Word("ten")
+  )
+
+  val currentPosition = Var(0)
+
+  val word = Rx{numbers(currentPosition())}
+
+  val currentInput = Var("")
+
+  val hint = Rx{if (currentInput() == word().txt) "  - Enter!" else ""}
+  
   @JSExport
   def main(): Unit = {
+
     dom.document.body.innerHTML = ""
     dom.document.body.appendChild(
-      section(id:="todoapp")(
+      section(id:="todoapp") (
         header(id:="header")(
-          h1("todos"),
+          h1(Rx{word().txt + hint()}),
           form(
             inputBox,
             onsubmit := { () =>
-              tasks() = Task(Var(inputBox.value), Var(false)) +: tasks()
-              inputBox.value = ""
+              if (currentInput() == word().txt) {
+                word().done() = true
+                currentPosition() += 1
+                inputBox.value = ""
+                currentInput() = ""
+                inputBox.placeholder = word().txt
+              }
               false
             }
           )
         ),
+
         section(id:="main")(
-          input(
-            id:="toggle-all",
-            `type`:="checkbox",
-            cursor:="pointer",
-            onclick := { () =>
-              val target = tasks().exists(_.done() == false)
-              Var.set(tasks().map(_.done -> target): _*)
-            }
-          ),
-          label(`for`:="toggle-all", "Mark all as complete"),
           Rx {
             ul(id := "todo-list")(
-              for (task <- tasks() if filters(filter())(task)) yield {
-                val inputRef = input(`class` := "edit", value := task.txt()).render
-
-                li(
-                  `class` := Rx{
-                    if (task.done()) "completed"
-                    else if (editing() == Some(task)) "editing"
+              for (word <- numbers) yield {
+                li(`class`:= Rx{
+                    if (word.done())"completed"
                     else ""
                   },
-                  div(`class` := "view")(
-                    "ondblclick".attr := { () =>
-                      editing() = Some(task)
-                    },
+                  div(`class`:="view")(
                     input(
                       `class` := "toggle",
                       `type` := "checkbox",
                       cursor := "pointer",
-                      onchange := { () =>
-                        task.done() = !task.done()
-                      },
-                      if (task.done()) checked := true
+                      if (word.done()) checked := true
                     ),
-                    label(task.txt()),
-                    button(
-                      `class` := "destroy",
-                      cursor := "pointer",
-                      onclick := { () =>tasks() = tasks().filter(_ != task) }
-                    )
-                  ),
-                  form(
-                    onsubmit := { () =>
-                      task.txt() = inputRef.value
-                      editing() = None
-                      false
-                    },
-                    inputRef
-                  )
-                )
+                    label(word.txt)
+                  ))
               }
             )
           },
-          footer(id:="footer")(
-            span(id:="todo-count")(strong(notDone), " item left"),
 
-            ul(id:="filters")(
-              for ((name, pred) <- filters.toSeq) yield {
-                li(a(
-                  `class`:=Rx{
-                    if(name == filter()) "selected"
-                    else ""
-                  },
-                  name,
-                  href:="#",
-                  onclick := {() => filter() = name}
-                ))
-              }
-            ),
-            button(
-              id:="clear-completed",
-              onclick := { () => tasks() = tasks().filter(!_.done()) },
-              "Clear completed (", done, ")"
-            )
+          footer(id:="footer")(
+            span(id:="todo-count")(strong(Rx{currentPosition()}), "'s inputed")
           )
         ),
+
         footer(id:="info")(
-          p("Double-click to edit a todo"),
-          p(a(href:="https://github.com/lihaoyi/workbench-example-app/blob/todomvc/src/main/scala/example/ScalaJSExample.scala")("Source Code")),
-          p("Created by ", a(href:="http://github.com/lihaoyi")("Li Haoyi"))
+          p("Created by ", a(href:="http://github.com/YusukeKokubo")("Yusuke Kokubo."))
         )
       ).render
     )
+
+    dom.document.getElementById("new-todo").oninput = { (e:Event) =>
+      currentInput() = e.target.asInstanceOf[js.Dynamic].value.asInstanceOf[String]
+    }
   }
+
 }

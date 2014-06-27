@@ -74,11 +74,10 @@ input[type="checkbox"] {
 	position: absolute;
 	top: -120px;
 	width: 100%;
-	font-size: 70px;
+	font-size: 80px;
 	font-weight: bold;
 	text-align: center;
-	color: #b3b3b3;
-	color: rgba(255, 255, 255, 0.3);
+	color: #232323;
 	text-shadow: -1px -1px rgba(0, 0, 0, 0.2);
 	-webkit-text-rendering: optimizeLegibility;
 	-moz-text-rendering: optimizeLegibility;
@@ -115,7 +114,7 @@ input[type="checkbox"] {
 	position: relative;
 	margin: 0;
 	width: 100%;
-	font-size: 24px;
+	font-size: 72px;
 	font-family: inherit;
 	line-height: 1.4em;
 	border: 0;
