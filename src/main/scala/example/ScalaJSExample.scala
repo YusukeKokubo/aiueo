@@ -7,7 +7,6 @@ import tags2.section
 import rx._
 import scala.scalajs.js.annotation.JSExport
 import scala.Some
-import scala.util.Random
 import scala.scalajs.js
 import org.scalajs.dom.{HTMLElement, Event}
 
@@ -34,7 +33,11 @@ object ScalaJSExample {
     Word("seven"),
     Word("eight"),
     Word("nine"),
-    Word("ten")
+    Word("ten"),
+    Word("hello"),
+    Word("good morning"),
+    Word("apple"),
+    Word("bear")
   )
 
   val currentPosition = Var(0)
@@ -48,6 +51,7 @@ object ScalaJSExample {
   @JSExport
   def main(): Unit = {
 
+    js.eval("var utterance = new SpeechSynthesisUtterance('" + word().txt + "');\nwindow.speechSynthesis.speak(utterance);")
     dom.document.body.innerHTML = ""
     dom.document.body.appendChild(
       section(id:="todoapp") (
@@ -62,6 +66,7 @@ object ScalaJSExample {
                 inputBox.value = ""
                 currentInput() = ""
                 inputBox.placeholder = word().txt
+                js.eval("var utterance = new SpeechSynthesisUtterance('" + word().txt + "');\nwindow.speechSynthesis.speak(utterance);")
               }
               false
             }
@@ -102,6 +107,9 @@ object ScalaJSExample {
 
     dom.document.getElementById("new-todo").oninput = { (e:Event) =>
       currentInput() = e.target.asInstanceOf[js.Dynamic].value.asInstanceOf[String]
+      if (currentInput() == word().txt) {
+        js.eval("var utterance = new SpeechSynthesisUtterance('" + word().txt + "');\nwindow.speechSynthesis.speak(utterance);")
+      }
     }
   }
 
