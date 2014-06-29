@@ -7,7 +7,7 @@ import tags2.section
 import rx._
 import scala.scalajs.js.annotation.JSExport
 import scala.scalajs.js
-import org.scalajs.dom.{Event}
+import org.scalajs.dom.{KeyboardEvent, Event}
 
 
 case class Word(txt: String, done: Var[Boolean]=Var(false))
@@ -16,12 +16,6 @@ case class Words(words: Seq[Word], requireReturn: Boolean)
 @JSExport
 object ScalaJSExample {
   import Framework._
-
-  val inputBox = input(
-    id:="new-todo",
-    autofocus:=true,
-    autocomplete:=false
-  ).render
 
   val numbers = Words(Seq(
     Word("one"),
@@ -38,7 +32,17 @@ object ScalaJSExample {
 
   val alphabets = Words(('A' to 'Z').map{c: Char => Word(c.toString().asInstanceOf[String])}, false)
 
-  val currentWords: Var[Words] = Var(alphabets)
+  val lessons = Seq(numbers, alphabets)
+
+  val currentLessonPosition = Var(0)
+
+  val inputBox = input(
+    id:="new-todo",
+    autofocus:=true,
+    autocomplete:=false
+  ).render
+
+  val currentWords: Var[Words] = Var(lessons(currentLessonPosition()))
 
   val currentPosition = Var(0)
 
@@ -59,15 +63,12 @@ object ScalaJSExample {
       section(id:="todoapp") (
         header(id:="header")(
           h1(Rx{word().txt + hint()}),
-          form(
-            inputBox,
-            onsubmit := { () =>
-              if (isCorrectInput() && currentWords().requireReturn) {
-                nextWord()
-              }
-              false
+          form(inputBox, onsubmit := { () =>
+            if (isCorrectInput() && currentWords().requireReturn) {
+              nextWord()
             }
-          )
+            false
+          })
         ),
 
         section(id:="main")(
@@ -102,12 +103,14 @@ object ScalaJSExample {
       ).render
     )
 
-    dom.document.getElementById("new-todo").oninput = { (e:Event) =>
+    dom.document.getElementById(inputBox.id).oninput = { (e:Event) =>
       currentInput() = e.target.asInstanceOf[js.Dynamic].value.asInstanceOf[String]
-      if (isCorrectInput() && !currentWords().requireReturn) {
-        nextWord()
-      } else {
-        js.eval("var utterance = new SpeechSynthesisUtterance('" + word().txt + "');\nwindow.speechSynthesis.speak(utterance);")
+      if (isCorrectInput()) {
+        if (!currentWords().requireReturn) {
+          nextWord()
+        } else {
+          js.eval("var utterance = new SpeechSynthesisUtterance('" + word().txt + "');\nwindow.speechSynthesis.speak(utterance);")
+        }
       }
     }
   }
