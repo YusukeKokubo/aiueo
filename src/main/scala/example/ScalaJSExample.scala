@@ -6,12 +6,12 @@ import all._
 import tags2.section
 import rx._
 import scala.scalajs.js.annotation.JSExport
-import scala.Some
 import scala.scalajs.js
-import org.scalajs.dom.{HTMLElement, Event}
+import org.scalajs.dom.{Event}
 
 
 case class Word(txt: String, done: Var[Boolean]=Var(false))
+case class Words(words: Seq[Word], requireReturn: Boolean)
 
 @JSExport
 object ScalaJSExample {
@@ -23,7 +23,7 @@ object ScalaJSExample {
     autocomplete:=false
   ).render
 
-  val numbers = Seq(
+  val numbers = Words(Seq(
     Word("one"),
     Word("two"),
     Word("three"),
@@ -33,16 +33,14 @@ object ScalaJSExample {
     Word("seven"),
     Word("eight"),
     Word("nine"),
-    Word("ten"),
-    Word("hello"),
-    Word("good morning"),
-    Word("apple"),
-    Word("bear")
-  )
+    Word("ten")
+  ), true)
+
+  val alphabets = Words(('A' to 'Z').map{c: Char => Word(c.toString().asInstanceOf[String])}, false)
 
   val currentPosition = Var(0)
 
-  val word = Rx{numbers(currentPosition())}
+  val word: Rx[Word] = Rx{numbers.words(currentPosition())}
 
   val currentInput = Var("")
 
@@ -76,7 +74,7 @@ object ScalaJSExample {
         section(id:="main")(
           Rx {
             ul(id := "todo-list")(
-              for (word <- numbers) yield {
+              for (word <- numbers.words) yield {
                 li(`class`:= Rx{
                     if (word.done())"completed"
                     else ""
