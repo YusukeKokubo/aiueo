@@ -38,9 +38,11 @@ object ScalaJSExample {
 
   val alphabets = Words(('A' to 'Z').map{c: Char => Word(c.toString().asInstanceOf[String])}, false)
 
+  val currentWords: Var[Words] = Var(numbers)
+
   val currentPosition = Var(0)
 
-  val word: Rx[Word] = Rx{numbers.words(currentPosition())}
+  val word: Rx[Word] = Rx{currentWords().words(currentPosition())}
 
   val currentInput = Var("")
 
@@ -74,7 +76,7 @@ object ScalaJSExample {
         section(id:="main")(
           Rx {
             ul(id := "todo-list")(
-              for (word <- numbers.words) yield {
+              for (word <- currentWords().words) yield {
                 li(`class`:= Rx{
                     if (word.done())"completed"
                     else ""
