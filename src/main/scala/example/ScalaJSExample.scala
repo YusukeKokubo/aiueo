@@ -38,7 +38,7 @@ object ScalaJSExample {
 
   val alphabets = Words(('A' to 'Z').map{c: Char => Word(c.toString().asInstanceOf[String])}, false)
 
-  val currentWords: Var[Words] = Var(numbers)
+  val currentWords: Var[Words] = Var(alphabets)
 
   val currentPosition = Var(0)
 
@@ -46,8 +46,10 @@ object ScalaJSExample {
 
   val currentInput = Var("")
 
-  val hint = Rx{if (currentInput() == word().txt) "  - Enter!" else ""}
-  
+  val isCorrectInput = Rx{currentInput() == word().txt}
+
+  val hint = Rx{if (isCorrectInput()) "  - Enter!" else ""}
+
   @JSExport
   def main(): Unit = {
 
@@ -60,13 +62,8 @@ object ScalaJSExample {
           form(
             inputBox,
             onsubmit := { () =>
-              if (currentInput() == word().txt) {
-                word().done() = true
-                currentPosition() += 1
-                inputBox.value = ""
-                currentInput() = ""
-                inputBox.placeholder = word().txt
-                js.eval("var utterance = new SpeechSynthesisUtterance('" + word().txt + "');\nwindow.speechSynthesis.speak(utterance);")
+              if (isCorrectInput() && currentWords().requireReturn) {
+                nextWord()
               }
               false
             }
@@ -107,10 +104,21 @@ object ScalaJSExample {
 
     dom.document.getElementById("new-todo").oninput = { (e:Event) =>
       currentInput() = e.target.asInstanceOf[js.Dynamic].value.asInstanceOf[String]
-      if (currentInput() == word().txt) {
+      if (isCorrectInput() && !currentWords().requireReturn) {
+        nextWord()
+      } else {
         js.eval("var utterance = new SpeechSynthesisUtterance('" + word().txt + "');\nwindow.speechSynthesis.speak(utterance);")
       }
     }
+  }
+
+  def nextWord(): Unit = {
+    word().done() = true
+    currentPosition() += 1
+    inputBox.value = ""
+    currentInput() = ""
+    inputBox.placeholder = word().txt
+    js.eval("var utterance = new SpeechSynthesisUtterance('" + word().txt + "');\nwindow.speechSynthesis.speak(utterance);")
   }
 
 }
