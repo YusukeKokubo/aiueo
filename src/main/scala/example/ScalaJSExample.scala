@@ -32,7 +32,7 @@ object ScalaJSExample {
 
   val alphabets = Words(('A' to 'Z').map{c: Char => Word(c.toString().asInstanceOf[String])}, false)
 
-  val lessons = Seq(numbers, alphabets)
+  val lessons = Seq(alphabets, numbers)
 
   val currentLessonPosition = Var(0)
 
@@ -42,7 +42,7 @@ object ScalaJSExample {
     autocomplete:=false
   ).render
 
-  val currentWords: Var[Words] = Var(lessons(currentLessonPosition()))
+  val currentWords = Rx{lessons(currentLessonPosition())}
 
   val currentPosition = Var(0)
 
@@ -118,6 +118,13 @@ object ScalaJSExample {
   def nextWord(): Unit = {
     word().done() = true
     currentPosition() += 1
+    if (currentPosition() >= currentWords().words.length) {
+      currentLessonPosition() += 1
+      currentPosition() = 0
+      if (currentLessonPosition() >= lessons.length) {
+        currentLessonPosition() += 1
+      }
+    }
     inputBox.value = ""
     currentInput() = ""
     inputBox.placeholder = word().txt
