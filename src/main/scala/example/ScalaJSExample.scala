@@ -11,13 +11,10 @@ import org.scalajs.dom.{KeyboardEvent, Event}
 
 
 case class Word(txt: String, done: Var[Boolean]=Var(false))
-case class Words(words: Seq[Word], requireReturn: Boolean)
+case class Lesson(words: Seq[Word], requireReturn: Boolean)
 
-@JSExport
-object ScalaJSExample {
-  import Framework._
-
-  val numbers = Words(Seq(
+object Lessons {
+  val numbers = Lesson(Seq(
     Word("one"),
     Word("two"),
     Word("three"),
@@ -30,9 +27,20 @@ object ScalaJSExample {
     Word("ten")
   ), true)
 
-  val alphabets = Words(('A' to 'Z').map{c: Char => Word(c.toString().asInstanceOf[String])}, false)
+  val alphabets = Lesson(('A' to 'Z').map{c: Char => Word(c.toString())}, false)
+}
 
-  val lessons = Seq(alphabets, numbers)
+object Speaker {
+  def speak(word: Word): Unit = {
+    js.eval("window.speechSynthesis.speak(new SpeechSynthesisUtterance('" + word.txt + "'));")
+  }
+}
+
+@JSExport
+object ScalaJSExample {
+  import Framework._
+
+  val lessons = Seq(Lessons.alphabets, Lessons.numbers)
 
   val currentLessonPosition = Var(0)
 
@@ -42,11 +50,11 @@ object ScalaJSExample {
     autocomplete:=false
   ).render
 
-  val currentWords = Rx{lessons(currentLessonPosition())}
+  val currentLesson = Rx{lessons(currentLessonPosition())}
 
   val currentPosition = Var(0)
 
-  val word: Rx[Word] = Rx{currentWords().words(currentPosition())}
+  val word: Rx[Word] = Rx{currentLesson().words(currentPosition())}
 
   val currentInput = Var("")
 
@@ -57,14 +65,14 @@ object ScalaJSExample {
   @JSExport
   def main(): Unit = {
 
-    js.eval("var utterance = new SpeechSynthesisUtterance('" + word().txt + "');\nwindow.speechSynthesis.speak(utterance);")
+    Speaker.speak(word())
     dom.document.body.innerHTML = ""
     dom.document.body.appendChild(
       section(id:="todoapp") (
         header(id:="header")(
           h1(Rx{word().txt + hint()}),
           form(inputBox, onsubmit := { () =>
-            if (isCorrectInput() && currentWords().requireReturn) {
+            if (isCorrectInput() && currentLesson().requireReturn) {
               nextWord()
             }
             false
@@ -74,7 +82,7 @@ object ScalaJSExample {
         section(id:="main")(
           Rx {
             ul(id := "todo-list")(
-              for (word <- currentWords().words) yield {
+              for (word <- currentLesson().words) yield {
                 li(`class`:= Rx{
                     if (word.done())"completed"
                     else ""
@@ -93,7 +101,7 @@ object ScalaJSExample {
           },
 
           footer(id:="footer")(
-            span(id:="todo-count")(strong(Rx{currentPosition()}), "'s inputed")
+            span(id:="todo-count")(strong(Rx{currentPosition()}), "'s input")
           )
         ),
 
@@ -106,10 +114,10 @@ object ScalaJSExample {
     dom.document.getElementById(inputBox.id).oninput = { (e:Event) =>
       currentInput() = e.target.asInstanceOf[js.Dynamic].value.asInstanceOf[String]
       if (isCorrectInput()) {
-        if (!currentWords().requireReturn) {
+        if (!currentLesson().requireReturn) {
           nextWord()
         } else {
-          js.eval("var utterance = new SpeechSynthesisUtterance('" + word().txt + "');\nwindow.speechSynthesis.speak(utterance);")
+          Speaker.speak(word())
         }
       }
     }
@@ -118,7 +126,7 @@ object ScalaJSExample {
   def nextWord(): Unit = {
     word().done() = true
     currentPosition() += 1
-    if (currentPosition() >= currentWords().words.length) {
+    if (currentPosition() >= currentLesson().words.length) {
       currentLessonPosition() += 1
       currentPosition() = 0
       if (currentLessonPosition() >= lessons.length) {
@@ -128,7 +136,7 @@ object ScalaJSExample {
     inputBox.value = ""
     currentInput() = ""
     inputBox.placeholder = word().txt
-    js.eval("var utterance = new SpeechSynthesisUtterance('" + word().txt + "');\nwindow.speechSynthesis.speak(utterance);")
+    Speaker.speak(word())
   }
 
 }
