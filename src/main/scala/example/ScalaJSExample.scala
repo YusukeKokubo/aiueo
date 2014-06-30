@@ -106,6 +106,7 @@ object ScalaJSExample {
         ),
 
         footer(id:="info")(
+          p(a(href:="http://github.com/YusukeKokubo/aiueo")("Source Code")),
           p("Created by ", a(href:="http://github.com/YusukeKokubo")("Yusuke Kokubo."))
         )
       ).render
