@@ -11,7 +11,11 @@ import org.scalajs.dom.{KeyboardEvent, Event}
 
 
 case class Word(txt: String, done: Var[Boolean]=Var(false))
-case class Lesson(words: Seq[Word], requireReturn: Boolean)
+case class Lesson(words: Seq[Word], requireReturn: Boolean) {
+  def number(word: Word): Int = {
+    words.indexOf(word)
+  }
+}
 
 object Lessons {
   val numbers = Lesson(Seq(
@@ -44,12 +48,6 @@ object ScalaJSExample {
 
   val currentLessonPosition = Var(0)
 
-  val inputBox = input(
-    id:="new-todo",
-    autofocus:=true,
-    autocomplete:=false
-  ).render
-
   val currentLesson = Rx{lessons(currentLessonPosition())}
 
   val currentPosition = Var(0)
@@ -62,15 +60,23 @@ object ScalaJSExample {
 
   val hint = Rx{if (isCorrectInput()) "  - Enter!" else ""}
 
+  val inputBox = input(
+    id:="new-todo",
+    autofocus:=true,
+    autocomplete:=false,
+    placeholder := Rx{word().txt},
+    `class` := Rx{if (word().txt.contains(currentInput())) "ok" else "ng"}
+  ).render
+
   @JSExport
   def main(): Unit = {
 
     Speaker.speak(word())
     dom.document.body.innerHTML = ""
     dom.document.body.appendChild(
-      section(id:="todoapp") (
+      section(id:="aiueo") (
         header(id:="header")(
-          h1(Rx{word().txt + hint()}),
+          h1("typing lesson - aiueo"),
           form(inputBox, onsubmit := { () =>
             if (isCorrectInput() && currentLesson().requireReturn) {
               nextWord()
@@ -79,30 +85,20 @@ object ScalaJSExample {
           })
         ),
 
-        section(id:="main")(
+        section(id:="words")(
           Rx {
-            ul(id := "todo-list")(
+            div(
               for (word <- currentLesson().words) yield {
-                li(`class`:= Rx{
-                    if (word.done())"completed"
-                    else ""
+                span(`class`:= Rx{
+                    "word " + (if (word.done()) "completed"
+                               else if (currentPosition() == currentLesson().number(word)) "current"
+                               else "")
                   },
-                  div(`class`:="view")(
-                    input(
-                      `class` := "toggle",
-                      `type` := "checkbox",
-                      cursor := "pointer",
-                      if (word.done()) checked := true
-                    ),
-                    label(word.txt)
-                  ))
+                  word.txt
+                )
               }
             )
-          },
-
-          footer(id:="footer")(
-            span(id:="todo-count")(strong(Rx{currentPosition()}), "'s input")
-          )
+          }
         ),
 
         footer(id:="info")(
@@ -136,7 +132,6 @@ object ScalaJSExample {
     }
     inputBox.value = ""
     currentInput() = ""
-    inputBox.placeholder = word().txt
     Speaker.speak(word())
   }
 
