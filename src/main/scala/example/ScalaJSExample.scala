@@ -11,14 +11,14 @@ import org.scalajs.dom.{KeyboardEvent, Event}
 
 
 case class Word(txt: String, done: Var[Boolean]=Var(false))
-case class Lesson(words: Seq[Word], requireReturn: Boolean) {
+case class Lesson(name: String, words: Seq[Word], requireReturn: Boolean, checked: Var[Boolean]=Var(true)) {
   def number(word: Word): Int = {
     words.indexOf(word)
   }
 }
 
-object Lessons {
-  val numbers = Lesson(Seq(
+object Lesson {
+  val numbers = Lesson("Numbers", Seq(
     Word("one"),
     Word("two"),
     Word("three"),
@@ -31,7 +31,9 @@ object Lessons {
     Word("ten")
   ), true)
 
-  val alphabets = Lesson(('A' to 'Z').map{c: Char => Word(c.toString())}, false)
+  val alphabets = Lesson("ABC's", ('A' to 'Z').map{c: Char => Word(c.toString())}, false)
+
+  val lessons = Seq(alphabets, numbers)
 }
 
 object Speaker {
@@ -44,11 +46,11 @@ object Speaker {
 object ScalaJSExample {
   import Framework._
 
-  val lessons = Seq(Lessons.alphabets, Lessons.numbers)
+  val lessons = Rx{Lesson.lessons.filter(_.checked())}
 
   val currentLessonPosition = Var(0)
 
-  val currentLesson = Rx{lessons(currentLessonPosition())}
+  val currentLesson = Rx{lessons()(currentLessonPosition())}
 
   val currentPosition = Var(0)
 
@@ -76,7 +78,17 @@ object ScalaJSExample {
     dom.document.body.appendChild(
       section(id:="aiueo") (
         header(id:="header")(
-          h1("typing lesson - aiueo"),
+          h1(Rx{"typing lesson - " + currentLesson().name}),
+          for (lesson <- lessons()) yield {
+            div(
+              label(lesson.name,
+                input(`type`:="checkbox",
+                  onchange:= {() => lesson.checked() = !lesson.checked() },
+                  if (lesson.checked()) checked:=true
+                )
+              )
+            )
+          },
           form(inputBox, onsubmit := { () =>
             if (isCorrectInput() && currentLesson().requireReturn) {
               nextWord()
@@ -126,7 +138,7 @@ object ScalaJSExample {
     if (currentPosition() >= currentLesson().words.length) {
       currentLessonPosition() += 1
       currentPosition() = 0
-      if (currentLessonPosition() >= lessons.length) {
+      if (currentLessonPosition() >= lessons().length) {
         currentLessonPosition() += 1
       }
     }
