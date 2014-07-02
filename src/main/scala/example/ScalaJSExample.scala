@@ -12,6 +12,10 @@ import org.scalajs.dom.{KeyboardEvent, Event}
 
 case class Word(txt: String, done: Var[Boolean]=Var(false))
 case class Lesson(name: String, words: Seq[Word], requireReturn: Boolean, checked: Var[Boolean]=Var(true)) {
+  def reset(): Unit = {
+    words.foreach(_.done() = false)
+  }
+
   def number(word: Word): Int = {
     words.indexOf(word)
   }
@@ -50,11 +54,24 @@ object ScalaJSExample {
 
   val currentLessonPosition = Var(0)
 
-  val currentLesson = Rx{lessons()(currentLessonPosition())}
-
   val currentPosition = Var(0)
 
-  val word: Rx[Word] = Rx{currentLesson().words(currentPosition())}
+  val currentLesson = Rx{
+    if (currentLessonPosition() >= lessons().length) {
+      currentLessonPosition() = 0
+      currentPosition() = 0
+    }
+    lessons()(currentLessonPosition())
+  }
+
+  val word: Rx[Word] = Rx{
+    if (currentPosition() >= currentLesson().words.length) {
+      currentLessonPosition() += 1
+      currentLesson().reset()
+      currentPosition() = 0
+    }
+    currentLesson().words(currentPosition())
+  }
 
   val currentInput = Var("")
 
@@ -135,13 +152,6 @@ object ScalaJSExample {
   def nextWord(): Unit = {
     word().done() = true
     currentPosition() += 1
-    if (currentPosition() >= currentLesson().words.length) {
-      currentLessonPosition() += 1
-      currentPosition() = 0
-      if (currentLessonPosition() >= lessons().length) {
-        currentLessonPosition() += 1
-      }
-    }
     inputBox.value = ""
     currentInput() = ""
     Speaker.speak(word())
