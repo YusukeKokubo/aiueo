@@ -22,7 +22,7 @@ case class Lesson(name: String, words: Seq[Word], requireReturn: Boolean, checke
 }
 
 object Lesson {
-  val numbers = Lesson("Numbers", Seq(
+  val alphabet_numbers = Lesson("one two three's", Seq(
     Word("one"),
     Word("two"),
     Word("three"),
@@ -36,8 +36,10 @@ object Lesson {
   ), true)
 
   val alphabets = Lesson("ABC's", ('A' to 'Z').map{c: Char => Word(c.toString())}, false)
+  
+  val numbers = Lesson("123's", (1 to 100).map{c: Int => Word(c.toString())}, false)
 
-  val lessons = Seq(alphabets, numbers)
+  val lessons = Seq(alphabets, alphabet_numbers, numbers)
 }
 
 object Speaker {
