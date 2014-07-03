@@ -39,12 +39,25 @@ object Lesson {
   
   val numbers = Lesson("123's", (1 to 100).map{c: Int => Word(c.toString())}, false)
 
-  val lessons = Seq(alphabets, alphabet_numbers, numbers)
+  val hiragana = Lesson("ひらがな", Seq(
+    Word("あいうえお"),
+    Word("かきくけこ"),
+    Word("さしすせそ"),
+    Word("たちつてと"),
+    Word("なにぬねの"),
+    Word("はひふへほ"),
+    Word("まみむめも"),
+    Word("やゆよ"),
+    Word("らりるれろ"),
+    Word("わをん")
+  ), true)
+
+  val lessons = Seq(alphabets, alphabet_numbers, numbers, hiragana)
 }
 
 object Speaker {
   def speak(word: Word): Unit = {
-    js.eval("window.speechSynthesis.speak(new SpeechSynthesisUtterance('" + word.txt + "'));")
+    js.eval("var msg = new SpeechSynthesisUtterance('" + word.txt + "'); msg.lang='ja-JP'; window.speechSynthesis.speak(msg);")
   }
 }
 
