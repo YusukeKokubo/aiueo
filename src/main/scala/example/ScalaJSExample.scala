@@ -11,7 +11,7 @@ import org.scalajs.dom.{KeyboardEvent, Event}
 
 
 case class Word(txt: String, done: Var[Boolean]=Var(false))
-case class Lesson(name: String, words: Seq[Word], requireReturn: Boolean, checked: Var[Boolean]=Var(true)) {
+case class Lesson(name: String, words: Seq[Word], requireReturn: Boolean, checked: Var[Boolean]=Var(false)) {
   def reset(): Unit = {
     words.foreach(_.done() = false)
   }
@@ -33,7 +33,7 @@ object Lesson {
     Word("eight"),
     Word("nine"),
     Word("ten")
-  ), true)
+  ), true, Var(true))
 
   val alphabets = Lesson("ABC's", ('A' to 'Z').map{c: Char => Word(c.toString())}, false)
   
@@ -65,18 +65,20 @@ object Speaker {
 object ScalaJSExample {
   import Framework._
 
-  val lessons = Rx{Lesson.lessons.filter(_.checked())}
+  val lessons = Lesson.lessons
+
+  val selectedLessons = Rx{lessons.filter(_.checked())}
 
   val currentLessonPosition = Var(0)
 
   val currentPosition = Var(0)
 
   val currentLesson = Rx{
-    if (currentLessonPosition() >= lessons().length) {
+    if (currentLessonPosition() >= selectedLessons().length) {
       currentLessonPosition() = 0
       currentPosition() = 0
     }
-    lessons()(currentLessonPosition())
+    selectedLessons()(currentLessonPosition())
   }
 
   val word: Rx[Word] = Rx{
@@ -91,8 +93,6 @@ object ScalaJSExample {
   val currentInput = Var("")
 
   val isCorrectInput = Rx{currentInput() == word().txt}
-
-  val hint = Rx{if (isCorrectInput()) "  - Enter!" else ""}
 
   val inputBox = input(
     id:="new-todo",
@@ -111,7 +111,7 @@ object ScalaJSExample {
       section(id:="aiueo") (
         header(id:="header")(
           h1(Rx{"typing lesson - " + currentLesson().name}),
-          for (lesson <- lessons()) yield {
+          for (lesson <- lessons) yield {
             div(
               label(lesson.name,
                 input(`type`:="checkbox",
