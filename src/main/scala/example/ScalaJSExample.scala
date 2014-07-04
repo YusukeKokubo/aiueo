@@ -55,9 +55,19 @@ object Lesson {
   val lessons = Seq(alphabets, alphabet_numbers, numbers, hiragana)
 }
 
+case class Lang(name: String, code: String)
+
+object Lang{
+  val en = Lang("English",  "en-US")
+  val ja = Lang("Japanese", "ja-JP")
+  val cn = Lang("Chinese",  "zh-CN")
+
+  val langs = Seq(en, ja, cn)
+}
+
 object Speaker {
-  def speak(word: Word): Unit = {
-    js.eval("var msg = new SpeechSynthesisUtterance('" + word.txt + "'); msg.lang='ja-JP'; window.speechSynthesis.speak(msg);")
+  def speak(word: Word)(implicit lang: Var[String]): Unit = {
+    js.eval("var msg = new SpeechSynthesisUtterance('" + word.txt + "'); msg.lang='" + lang() + "'; window.speechSynthesis.speak(msg);")
   }
 }
 
@@ -90,6 +100,8 @@ object ScalaJSExample {
     currentLesson().words(currentPosition())
   }
 
+  implicit val lang = Var(Lang.en.code)
+
   val currentInput = Var("")
 
   val isCorrectInput = Rx{currentInput() == word().txt}
@@ -111,6 +123,15 @@ object ScalaJSExample {
       section(id:="aiueo") (
         header(id:="header")(
           h1(Rx{"typing lesson - " + currentLesson().name}),
+          select(
+            for (lang <- Lang.langs) yield {
+              option(lang.name, value := lang.code)
+            },
+            onchange := {(e:Event) =>
+              lang() = e.target.asInstanceOf[js.Dynamic].value.asInstanceOf[String]
+            }
+          ),
+
           for (lesson <- lessons) yield {
             div(
               label(lesson.name,
@@ -121,6 +142,7 @@ object ScalaJSExample {
               )
             )
           },
+
           form(inputBox, onsubmit := { () =>
             if (isCorrectInput() && currentLesson().requireReturn) {
               nextWord()
