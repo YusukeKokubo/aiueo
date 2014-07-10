@@ -35,9 +35,9 @@ object Lesson {
     Word("ten")
   ), true, Lang.en)
 
-  val alphabets = Lesson("ABC's", ('A' to 'Z').map{c: Char => Word(c.toString())}, false)
+  val alphabets = Lesson("ABC's", ('A' to 'Z').map{c: Char => Word(c.toString())}, false, Lang.en)
   
-  val numbers = Lesson("123's", (1 to 100).map{c: Int => Word(c.toString())}, false)
+  val numbers = Lesson("123's", (1 to 100).map{c: Int => Word(c.toString())}, false, Lang.ja)
 
   val hiragana = Lesson("ひらがな", Seq(
     Word("あいうえお"),
@@ -128,6 +128,7 @@ object ScalaJSExample {
                   onchange:= {() =>
                     lesson() = l
                     lang() = lesson().lang.code
+                    position() = 0
                   },
                   name := "lesson",
                   if (l == lesson()) checked:=true
@@ -148,12 +149,15 @@ object ScalaJSExample {
           Rx {
             div(
               for (word <- lesson().words) yield {
-                span(`class`:= Rx{
+                div(
+                `class` := (if (lesson().requireReturn) "paragraph" else "chara"),
+                span(`class`:= (
                     "word " + (if (word.done()) "completed"
                                else if (position() == lesson().number(word)) "current"
                                else "")
-                  },
+                  ),
                   word.txt
+                )
                 )
               }
             )
