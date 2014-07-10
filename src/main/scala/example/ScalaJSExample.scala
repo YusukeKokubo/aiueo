@@ -75,16 +75,16 @@ object Speaker {
 object ScalaJSExample {
   import Framework._
 
-  val currentPosition = Var(0)
+  val position = Var(0)
 
-  val currentLesson = Var(Lesson.lessons.head)
+  val lesson = Var(Lesson.lessons.head)
 
   val word: Rx[Word] = Rx{
-    if (currentPosition() >= currentLesson().words.length) {
-      currentLesson().reset()
-      currentPosition() = 0
+    if (position() >= lesson().words.length) {
+      lesson().reset()
+      position() = 0
     }
-    currentLesson().words(currentPosition())
+    lesson().words(position())
   }
 
   implicit val lang = Var(Lang.en.code)
@@ -109,7 +109,7 @@ object ScalaJSExample {
     dom.document.body.appendChild(
       section(id:="aiueo") (
         header(id:="header")(
-          h1(Rx{"typing lesson - " + currentLesson().name}),
+          h1(Rx{"typing lesson - " + lesson().name}),
           select(
             for (lang <- Lang.langs) yield {
               option(lang.name, value := lang.code)
@@ -119,22 +119,22 @@ object ScalaJSExample {
             }
           ),
 
-          for (lesson <- Lesson.lessons) yield {
+          for (l <- Lesson.lessons) yield {
             div(
               label(lesson.name,
                 input(`type`:="radio",
                   onchange:= {() =>
-                    currentLesson() = lesson
+                    lesson() = l
                   },
                   name := "lesson",
-                  if (lesson == currentLesson()) checked:=true
+                  if (l == lesson()) checked:=true
                 )
               )
             )
           },
 
           form(inputBox, onsubmit := { () =>
-            if (isCorrectInput() && currentLesson().requireReturn) {
+            if (isCorrectInput() && lesson().requireReturn) {
               nextWord()
             }
             false
@@ -144,10 +144,10 @@ object ScalaJSExample {
         section(id:="words")(
           Rx {
             div(
-              for (word <- currentLesson().words) yield {
+              for (word <- lesson().words) yield {
                 span(`class`:= Rx{
                     "word " + (if (word.done()) "completed"
-                               else if (currentPosition() == currentLesson().number(word)) "current"
+                               else if (position() == lesson().number(word)) "current"
                                else "")
                   },
                   word.txt
@@ -167,7 +167,7 @@ object ScalaJSExample {
     dom.document.getElementById(inputBox.id).oninput = { (e:Event) =>
       currentInput() = e.target.asInstanceOf[js.Dynamic].value.asInstanceOf[String]
       if (isCorrectInput()) {
-        if (!currentLesson().requireReturn) {
+        if (!lesson().requireReturn) {
           nextWord()
         } else {
           Speaker.speak(word())
@@ -178,7 +178,7 @@ object ScalaJSExample {
 
   def nextWord(): Unit = {
     word().done() = true
-    currentPosition() += 1
+    position() += 1
     inputBox.value = ""
     currentInput() = ""
     Speaker.speak(word())
