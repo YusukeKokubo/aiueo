@@ -11,7 +11,7 @@ import org.scalajs.dom.{KeyboardEvent, Event}
 
 
 case class Word(txt: String, done: Var[Boolean]=Var(false))
-case class Lesson(name: String, words: Seq[Word], requireReturn: Boolean, checked: Var[Boolean]=Var(false)) {
+case class Lesson(name: String, words: Seq[Word], requireReturn: Boolean) {
   def reset(): Unit = {
     words.foreach(_.done() = false)
   }
@@ -33,7 +33,7 @@ object Lesson {
     Word("eight"),
     Word("nine"),
     Word("ten")
-  ), true, Var(true))
+  ), true)
 
   val alphabets = Lesson("ABC's", ('A' to 'Z').map{c: Char => Word(c.toString())}, false)
   
@@ -75,25 +75,12 @@ object Speaker {
 object ScalaJSExample {
   import Framework._
 
-  val lessons = Lesson.lessons
-
-  val selectedLessons = Rx{lessons.filter(_.checked())}
-
-  val currentLessonPosition = Var(0)
-
   val currentPosition = Var(0)
 
-  val currentLesson = Rx{
-    if (currentLessonPosition() >= selectedLessons().length) {
-      currentLessonPosition() = 0
-      currentPosition() = 0
-    }
-    selectedLessons()(currentLessonPosition())
-  }
+  val currentLesson = Var(Lesson.lessons.head)
 
   val word: Rx[Word] = Rx{
     if (currentPosition() >= currentLesson().words.length) {
-      currentLessonPosition() += 1
       currentLesson().reset()
       currentPosition() = 0
     }
@@ -132,12 +119,15 @@ object ScalaJSExample {
             }
           ),
 
-          for (lesson <- lessons) yield {
+          for (lesson <- Lesson.lessons) yield {
             div(
               label(lesson.name,
-                input(`type`:="checkbox",
-                  onchange:= {() => lesson.checked() = !lesson.checked() },
-                  if (lesson.checked()) checked:=true
+                input(`type`:="radio",
+                  onchange:= {() =>
+                    currentLesson() = lesson
+                  },
+                  name := "lesson",
+                  if (lesson == currentLesson()) checked:=true
                 )
               )
             )
