@@ -11,7 +11,7 @@ import org.scalajs.dom.{KeyboardEvent, Event}
 
 
 case class Word(txt: String, done: Var[Boolean]=Var(false))
-case class Lesson(name: String, words: Seq[Word], requireReturn: Boolean) {
+case class Lesson(name: String, words: Seq[Word], requireReturn: Boolean, lang: Lang) {
   def reset(): Unit = {
     words.foreach(_.done() = false)
   }
@@ -33,7 +33,7 @@ object Lesson {
     Word("eight"),
     Word("nine"),
     Word("ten")
-  ), true)
+  ), true, Lang.en)
 
   val alphabets = Lesson("ABC's", ('A' to 'Z').map{c: Char => Word(c.toString())}, false)
   
@@ -50,7 +50,7 @@ object Lesson {
     Word("やゆよ"),
     Word("らりるれろ"),
     Word("わをん")
-  ), true)
+  ), true, Lang.ja)
 
   val lessons = Seq(alphabets, alphabet_numbers, numbers, hiragana)
 }
@@ -87,7 +87,7 @@ object ScalaJSExample {
     lesson().words(position())
   }
 
-  implicit val lang = Var(Lang.en.code)
+  implicit val lang = Var(Lang.langs.head.code)
 
   val currentInput = Var("")
 
@@ -109,22 +109,25 @@ object ScalaJSExample {
     dom.document.body.appendChild(
       section(id:="aiueo") (
         header(id:="header")(
-          h1(Rx{"typing lesson - " + lesson().name}),
-          select(
-            for (lang <- Lang.langs) yield {
-              option(lang.name, value := lang.code)
-            },
-            onchange := {(e:Event) =>
-              lang() = e.target.asInstanceOf[js.Dynamic].value.asInstanceOf[String]
-            }
-          ),
+          h1(Rx{lesson().name}),
+          Rx{
+            select(
+              for (l <- Lang.langs) yield {
+                option(l.name, value := l.code, if (l.code == lang()) "selected".attr := true)
+              },
+              onchange := { (e: Event) =>
+                lang() = e.target.asInstanceOf[js.Dynamic].value.asInstanceOf[String]
+              }
+            )
+          },
 
           for (l <- Lesson.lessons) yield {
             div(
-              label(lesson.name,
+              label(l.name,
                 input(`type`:="radio",
                   onchange:= {() =>
                     lesson() = l
+                    lang() = lesson().lang.code
                   },
                   name := "lesson",
                   if (l == lesson()) checked:=true
