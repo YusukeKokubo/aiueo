@@ -10,7 +10,15 @@ import scala.scalajs.js
 import org.scalajs.dom.{KeyboardEvent, Event}
 
 
-case class Word(txt: String, done: Var[Boolean]=Var(false))
+case class Word(txt: String, key: Option[String] = None, done: Var[Boolean]=Var(false)) {
+  def hint(): String = {
+    key match {
+      case Some(k) => k
+      case None => txt
+    }
+  }
+}
+
 case class Lesson(name: String, words: Seq[Word], requireReturn: Boolean, lang: Lang) {
   def reset(): Unit = {
     words.foreach(_.done() = false)
@@ -37,19 +45,19 @@ object Lesson {
 
   val alphabets = Lesson("ABC's", ('A' to 'Z').map{c: Char => Word(c.toString())}, false, Lang.en)
   
-  val numbers = Lesson("123's", (1 to 100).map{c: Int => Word(c.toString())}, false, Lang.ja)
+  val numbers = Lesson("123's", (1 to 100).grouped(10).map(_.map{c: Int => Word(c.toString())}).flatten.toSeq, false, Lang.ja)
 
   val hiragana = Lesson("ひらがな", Seq(
-    Word("あいうえお"),
-    Word("かきくけこ"),
-    Word("さしすせそ"),
-    Word("たちつてと"),
-    Word("なにぬねの"),
-    Word("はひふへほ"),
-    Word("まみむめも"),
-    Word("やゆよ"),
-    Word("らりるれろ"),
-    Word("わをん")
+    Word("あいうえお", Some("aiueo")),
+    Word("かきくけこ", Some("kakikukeko")),
+    Word("さしすせそ", Some("sasisuseso")),
+    Word("たちつてと", Some("tatituteto")),
+    Word("なにぬねの", Some("naninuneno")),
+    Word("はひふへほ", Some("hahihuheho")),
+    Word("まみむめも", Some("mamimumemo")),
+    Word("やゆよ",    Some("yayuyo")),
+    Word("らりるれろ", Some("rarirurero")),
+    Word("わをん",    Some("wawonn"))
   ), true, Lang.ja)
 
   val lessons = Seq(alphabets, alphabet_numbers, numbers, hiragana)
@@ -94,11 +102,11 @@ object ScalaJSExample {
   val isCorrectInput = Rx{currentInput() == word().txt}
 
   val inputBox = input(
-    id:="new-todo",
+    `id`:="new-todo",
     autofocus:=true,
     autocomplete:=false,
     placeholder := Rx{word().txt},
-    `class` := Rx{if (word().txt.contains(currentInput())) "ok" else "ng"}
+    `class` := Rx{"input " + (if (word().txt.contains(currentInput())) "ok" else "ng")}
   ).render
 
   @JSExport
@@ -137,12 +145,23 @@ object ScalaJSExample {
             )
           },
 
-          form(inputBox, onsubmit := { () =>
-            if (isCorrectInput() && lesson().requireReturn) {
-              nextWord()
+
+          form(inputBox,
+            onsubmit := { () =>
+              if (isCorrectInput() && lesson().requireReturn) {
+                nextWord()
+              }
+              false
+            },
+            Rx {
+              div(
+                word().key match {
+                  case Some(k) => span(`class` := "hint", k)
+                  case None => {}
+                }
+              )
             }
-            false
-          })
+          )
         ),
 
         section(id:="words")(
