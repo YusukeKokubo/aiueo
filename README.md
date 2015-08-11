@@ -8,4 +8,4 @@ based on [todomvc by scala.js](https://github.com/lihaoyi/workbench-example-app/
 
 hogehoge
 
-
+fuga
